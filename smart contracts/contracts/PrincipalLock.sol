@@ -64,7 +64,7 @@ contract PrincipalLock {
     modifier refundable() {
         require(
             _sender == msg.sender, 
-            "Refund: Not Sender, please check if you are using the correct account"
+            "Refund: Not Sender, please use the correct account"
         );
         require(
             _refunded == false, 
@@ -78,8 +78,8 @@ contract PrincipalLock {
     }
 
     function withdraw() public withdrawable returns (bool) {
-        _tokenAddress.transfer(_receiver, _tokenAmount);
         _withdrawn = true;
+        _tokenAddress.transfer(_receiver, _tokenAmount);
         emit PrincipalTokensWithdrawn(address(_tokenAddress), _receiver, _tokenAmount);
         return true;
     }
@@ -91,8 +91,8 @@ contract PrincipalLock {
         if (_unlockTime >= block.timestamp) {
             _gLockAddress.setRefund();
         }
-        _tokenAddress.transfer(_sender, _tokenAmount);
         _refunded = true;
+        _tokenAddress.transfer(_sender, _tokenAmount);
         emit PrincipalTokensRefunded(address(_tokenAddress), _sender, _tokenAmount);
         return true;
     }
