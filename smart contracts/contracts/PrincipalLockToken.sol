@@ -2,34 +2,36 @@
 pragma solidity ^0.8.9;
 
 import "./NewToken.sol";
-import "./GriefingLock.sol";
+import "./GriefingLockToken.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract PrincipalLock {
-    GriefingLock private _gLockAddress;
+contract PrincipalLockToken {
+    NewToken private _tokenAddress;
+    GriefingLockToken private _gLockAddress;
     address private _sender;
     address private _receiver;
-    uint private _amount;
+    uint private _tokenAmount;
     uint private _unlockTime;
     bool private _withdrawn = false;
     bool private _refunded = false;
 
-    event PrincipalDeployed(address indexed sender, address indexed receiver, uint256 amount, uint256 unlockTime);
-    event PrincipalWithdrawn(address indexed receiver, uint256 amount);
-    event PrincipalRefunded(address indexed sender, uint256 amount);
+    event PrincipalTokensLocked(address indexed tokenAddress, address indexed sender, address indexed receiver, uint256 amount, uint256 unlockTime);
+    event PrincipalTokensWithdrawn(address indexed tokenAddress, address indexed receiver, uint256 amount);
+    event PrincipalTokensRefunded(address indexed tokenAddress, address indexed sender, uint256 amount);
 
-    constructor (address gLockAddress, address sender, address receiver, uint tokenAmount, uint unlockTime)
+    constructor (address gLockAddress, address tokenAddress, address sender, address receiver, uint tokenAmount, uint unlockTime)
         positiveTokens(tokenAmount)
         validUnlockTime(unlockTime)
     {
-        _gLockAddress = GriefingLock(gLockAddress);
+        _gLockAddress = GriefingLockToken(gLockAddress);
+        _tokenAddress = NewToken(tokenAddress);
         _sender = sender;
         _receiver = receiver;
-        _amount = tokenAmount;
+        _tokenAmount = tokenAmount;
         _unlockTime = unlockTime;
-        emit PrincipalDeployed(_sender, _receiver, _amount, _unlockTime);
+        emit PrincipalTokensLocked(address(_tokenAddress), _sender, _receiver, _tokenAmount, _unlockTime);
     }
 
     modifier positiveTokens(uint tokenAmount) {
@@ -74,26 +76,23 @@ contract PrincipalLock {
         _;
     }
 
-    function withdraw() public payable withdrawable returns (bool) {
+    function withdraw() public withdrawable returns (bool) {
         _withdrawn = true;
-        payable(_receiver).transfer(_amount);
-        emit PrincipalWithdrawn(_receiver, _amount);
+        _tokenAddress.transfer(_receiver, _tokenAmount);
+        emit PrincipalTokensWithdrawn(address(_tokenAddress), _receiver, _tokenAmount);
         return true;
     }
     /**
         @dev
         When Bob grieves, the Griefing Lock's setRefund is called and allows Alice to withdraw Bob's Griefing Sum on Griefing Lock
     */
-    function refund() public payable refundable returns (bool) {
+    function refund() public refundable returns (bool) {
         if (_unlockTime >= block.timestamp) {
             _gLockAddress.setRefund();
         }
         _refunded = true;
-        payable(_sender).transfer(_amount);
-        emit PrincipalRefunded(_sender, _amount);
+        _tokenAddress.transfer(_sender, _tokenAmount);
+        emit PrincipalTokensRefunded(address(_tokenAddress), _sender, _tokenAmount);
         return true;
     }
-
-    receive() external payable {}
-    fallback() external payable {}
 }

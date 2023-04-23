@@ -2,43 +2,41 @@
 pragma solidity ^0.8.9;
 
 import "./NewToken.sol";
-import "./PrincipalLock.sol";
+import "./PrincipalLockToken.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-//
-
-// Remove the tokens, only make it payable and use goETH only
-// Listens for deployment event
-// To extend this further, we need logic to mandate that Goerli Sender locks up 1.5Q in application
-
-contract GriefingLock is Ownable {
+contract GriefingLockToken is Ownable {
     uint private constant MIN_TIME_GAP = 180;
+    NewToken private _tokenAddress;
     address private _pLockAddress = address(0);
     address private _sender;
     address private _receiver;
-    uint private _amount;
+    uint private _tokenAmount;
     uint private _timeGap;
     uint private _unlockTime;
     bool private _withdrawn = false;
     bool private _refunded = false;
     bool private _accessible = false;
 
-    event GriefingLockCreated(address indexed sender, address indexed receiver, uint256 unlockTime);
-    event GriefingLocked(address indexed sender, address indexed receiver, uint256 amount, uint256 unlockTime);
-    event GriefingWithdrawn(address indexed receiver, uint256 amount);
-    event PrincipalLocked(address indexed principalAddress, uint256 amount, uint256 unlockTime);
-    event GriefingRefunded(address indexed sender, uint256 amount);
+    event GriefingLockCreated(address indexed tokenAddress, address indexed sender, address indexed receiver, uint256 amount, uint256 unlockTime);
+    event GriefingTokensLocked(address indexed tokenAddress, address indexed sender, address indexed receiver, uint256 amount, uint256 unlockTime);
+    event GriefingTokensWithdrawn(address indexed tokenAddress, address indexed receiver, uint256 amount);
+    event PrincipalDeployed(address indexed principalAddress, address indexed tokenAddress, uint256 amount, uint256 unlockTime);
+    event GriefingTokensRefunded(address indexed tokenAddress, address indexed sender, uint256 amount);
 
-    constructor (address receiver, uint timeGap)
+    constructor (address tokenAddress, address receiver, uint tokenAmount, uint timeGap)
+        positiveTokenCollateral(tokenAmount)
         validUnlockTime(timeGap)
     {
+        _tokenAddress = NewToken(tokenAddress);
         _sender = owner();
         _receiver = receiver;
+        _tokenAmount = tokenAmount;
         _timeGap = timeGap;
         _unlockTime = SafeMath.add(block.timestamp, _timeGap);
-        emit GriefingLockCreated(_sender, _receiver, _unlockTime);
+        emit GriefingLockCreated(tokenAddress, _sender, _receiver, _tokenAmount, _unlockTime);
     }
 
     modifier positiveTokenCollateral(uint tokenAmount) {
@@ -91,31 +89,32 @@ contract GriefingLock is Ownable {
         _;
     }
 
-    function depositGriefingTokens() external payable onlyOwner {
-        _amount = msg.value;
-        emit GriefingLocked(_sender, _receiver, _amount, _unlockTime);
+    function depositGriefingTokens() external onlyOwner {
+        _tokenAddress.transferFrom(_sender, address(this), _tokenAmount);
+        emit GriefingTokensLocked(address(_tokenAddress), _sender, _receiver, _tokenAmount, _unlockTime);
     }
 
-    function deployPrincipal() external payable onlyOwner returns(PrincipalLock) {
+    function deployPrincipal(uint tokenAmount) external onlyOwner returns(PrincipalLockToken) {
         _accessible = true;
-        PrincipalLock principalContract = new PrincipalLock(address(this), _sender, _receiver, msg.value, SafeMath.add(_unlockTime, _timeGap));
+        _tokenAddress.transferFrom(_sender, address(this), tokenAmount);
+        PrincipalLockToken principalContract = new PrincipalLockToken(address(this), address(_tokenAddress), _sender, _receiver, tokenAmount, SafeMath.add(_unlockTime, _timeGap));
         _pLockAddress = address(principalContract);
-        payable(_pLockAddress).transfer(msg.value);
-        emit PrincipalLocked(address(principalContract), msg.value, SafeMath.add(_unlockTime, _timeGap));
+        _tokenAddress.transfer(address(_pLockAddress), tokenAmount);
+        emit PrincipalDeployed(address(principalContract), address(_tokenAddress), tokenAmount, SafeMath.add(_unlockTime, _timeGap));
         return principalContract;
     }
 
-    function withdraw() public payable withdrawable returns (bool) {
+    function withdraw() public withdrawable returns (bool) {
         _withdrawn = true;
-        payable(_receiver).transfer(_amount);
-        emit GriefingWithdrawn(_receiver, _amount);
+        _tokenAddress.transfer(_receiver, _tokenAmount);
+        emit GriefingTokensWithdrawn(address(_tokenAddress), _receiver, _tokenAmount);
         return true;
     }
 
-    function refund() public payable refundable onlyOwner returns (bool) {
+    function refund() public refundable onlyOwner returns (bool) {
         _refunded = true;
-        payable(_sender).transfer(_amount);
-        emit GriefingRefunded(_sender, _amount);
+        _tokenAddress.transfer(_sender, _tokenAmount);
+        emit GriefingTokensRefunded(address(_tokenAddress), _sender, _tokenAmount);
         return true;
     }
 
