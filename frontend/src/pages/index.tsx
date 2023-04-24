@@ -6,7 +6,6 @@ import Image from 'next/image';
 import favi from '../../public/favicon.png';
 
 function Home() {
-  
   return(
     <>
       <Head>
