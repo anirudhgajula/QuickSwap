@@ -1,21 +1,28 @@
-import { useBalance } from 'wagmi';
+import { useContractRead, useProvider } from 'wagmi';
 
 import { BigNumber, ethers } from 'ethers'
-
 import { FC, useEffect, useState } from 'react'
 import { tokenContractAddress } from '../config.js'
+import NewToken from '../../utils/NewToken.json'
 
 const TokenBalance: FC<{addr: `0x${string}` | undefined}> = ({addr}) => {
-    const {data} = useBalance({
-        address: addr,
-        token: tokenContractAddress,
+
+    const provider = useProvider();
+    const test = provider.getCode(tokenContractAddress);
+    console.log(test);
+
+    const {data} = useContractRead({
+        address: tokenContractAddress,
+        abi: NewToken.abi,
+        functionName: 'balanceOf',
+        args: [addr],
         watch: true
     });
     // Hooks are used to prevent hydration error
     const [val, setVal] = useState('0');
     // useEffect Hook, if data changes it runs again.
     useEffect(() => {
-        setVal(String(data?.formatted) == "undefined" ? "0" : String(ethers.utils.formatEther(data?.value as BigNumber)).split(".")[0]);
+        setVal(String(data) == "undefined" ? "0" : String(ethers.utils.formatEther(data as string)).split(".")[0]);
     }, [data]);
 
     return (

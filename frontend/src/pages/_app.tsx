@@ -19,7 +19,7 @@ const { chains, provider } = configureChains(
   [
     jsonRpcProvider({
       rpc: (chain) => ({
-        http: `https://${myMap.get(chain)}.settlemint.com/?token=bpaas-ca71Fe457d9e76c408628c9A55aDd7e918c0dC2D`,
+        http: `https://${myMap.get(chain)}.settlemint.com/bpaas-ca71Fe457d9e76c408628c9A55aDd7e918c0dC2D`,
       }),
     }),
   ],

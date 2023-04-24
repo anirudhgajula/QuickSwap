@@ -1,5 +1,3 @@
-'use client';
-
 import ConnectWallet from '../components/Wallet';
 import Head from 'next/head';
 import Image from 'next/image';
