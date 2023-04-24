@@ -1,4 +1,4 @@
-import { useContractRead, useProvider } from 'wagmi';
+import { useContractRead } from 'wagmi';
 
 import { BigNumber, ethers } from 'ethers'
 import { FC, useEffect, useState } from 'react'
@@ -6,11 +6,6 @@ import { tokenContractAddress } from '../config.js'
 import NewToken from '../../utils/NewToken.json'
 
 const TokenBalance: FC<{addr: `0x${string}` | undefined}> = ({addr}) => {
-
-    const provider = useProvider();
-    const test = provider.getCode(tokenContractAddress);
-    console.log(test);
-
     const {data} = useContractRead({
         address: tokenContractAddress,
         abi: NewToken.abi,

@@ -16,9 +16,9 @@ export type DeployState = {
 };
 
 interface ContractDeployArgs {
-  abi: Interface;
+  abi: any;
   bytecode: string;
-  args?: Array<string | number>;
+  args?: Array<string | BigNumber>;
   libraries?: Array<string>;
   value?: BigNumber;
   setContractAddress?: StateDispatch<string | null>;

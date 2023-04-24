@@ -1,8 +1,9 @@
 import { Interface, hexZeroPad } from "ethers/lib/utils";
+import { BigNumber } from "ethers";
 
 export function encodeConstructorData(
   abi: Interface,
-  args?: Array<string | number>,
+  args?: Array<string | BigNumber>,
   libraries?: Array<string>
 ) {
   if (libraries) {

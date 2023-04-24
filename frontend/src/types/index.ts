@@ -66,8 +66,10 @@ export type MintProps = {
   setHasMinted: StateDispatch<boolean>;
   setStage: StateDispatch<number>;
   setArgs: StateDispatch<{
-    name: string;
-    symbol: string;
+    addressToken: string;
+    addressReceiver: string;
+    tokenAmount: string;
+    timeGap: string;
   }>;
 };
 
@@ -76,20 +78,24 @@ export type HostProps = {
   setStage: StateDispatch<number>;
   urls: string[];
   args: {
-    name: string;
-    symbol: string;
+    addressToken: string;
+    addressReceiver: string;
+    tokenAmount: string;
+    timeGap: string;
   };
   prompt: string;
 };
 
 export interface DeployProps {
-  abi: Interface;
-  args: { name: string; symbol: string };
+  abi: any;
+  args: { addressToken: string; addressReceiver: string; tokenAmount: string; timeGap: string };
   setContractAddress: StateDispatch<string | null>;
   setStage: StateDispatch<number>;
   setArgs: StateDispatch<{
-    name: string;
-    symbol: string;
+    addressToken: string;
+    addressReceiver: string;
+    tokenAmount: string;
+    timeGap: string;
   }>;
 }
 export interface GenerateProps {
@@ -109,8 +115,10 @@ export type NextProps = {
   onClose: () => void;
   metadataURIs: string[];
   setArgs: StateDispatch<{
-    name: string;
-    symbol: string;
+    addressToken: string;
+    addressReceiver: string;
+    tokenAmount: string;
+    timeGap: string;
   }>;
   setMetadataURIs: StateDispatch<string[]>;
   setSelectedImages: StateDispatch<string[]>;
@@ -119,7 +127,10 @@ export type NextProps = {
   selectedImages: string[];
   prompt: string;
   btnRef: RefObject<HTMLButtonElement> | null;
-  args: { name: string; symbol: string };
+  args: { addressToken: string;
+    addressReceiver: string;
+    tokenAmount: string;
+    timeGap: string };
   setHasMinted: StateDispatch<boolean>;
 };
 

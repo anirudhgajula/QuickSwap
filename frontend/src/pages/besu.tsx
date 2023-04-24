@@ -1,10 +1,13 @@
 import ConnectWallet from '../components/Wallet';
 import { useAccount } from 'wagmi';
 import Head from 'next/head'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, SetStateAction } from 'react'
 import TokenBalance from '../components/TokenBalance';
 import Image from 'next/image';
 import besu from '../../public/besu.png';
+import DepTok from '@/components/DepTok';
+import Deploy from '../components/DeployToken';
+import GriefingLockToken from '../../utils/GriefingLockToken.json';
 
 function Besu() {
     const {address} = useAccount();
@@ -35,8 +38,11 @@ function Besu() {
             {connected && (
                 <>
                     <TokenBalance addr={address}/>
+                    <DepTok></DepTok>
                 </>
             )}
+
+            
         </>
     )
 }
