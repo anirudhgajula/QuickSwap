@@ -7,4 +7,4 @@ Quick Swap functions similar to a Hash Timelock Contract, with the addition of a
 The ERC 20 token has been finalized, and the logic will be carried forward to facilitate GoEth transfers.
 
 # Timeline
-Work in Progress: Front End (Monday, 24 April)
+Work in Progress: Front End
