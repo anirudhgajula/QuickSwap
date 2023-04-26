@@ -162,6 +162,82 @@ describe('QuickSwap Tokens', function () {
     );
   });
 
+  it('QuickSwap Reverts - User One refunds and User Two withdraws Griefing Tokens', async () => {
+    const { userOne, userTwo, genericToken, griefingLock } = await loadFixture(deployFixture);
+    await time.increase(100);
+    await expect(
+      genericToken.connect(userOne).approve(griefingLock.address, BigNumber.from(10000).mul(BigNumber.from(10).pow(18)))
+    )
+      .to.emit(genericToken, 'Approval')
+      .withArgs(userOne.address, griefingLock.address, BigNumber.from(10000).mul(BigNumber.from(10).pow(18)));
+
+    await griefingLock.connect(userOne).deployPrincipal(BigNumber.from(10000).mul(BigNumber.from(10).pow(18)));
+
+    const pLockAddress = await griefingLock.connect(userTwo).getPrincipalLock();
+    principalLock = (await ethers.getContractAt('PrincipalLockToken', pLockAddress));
+
+
+    await expect(principalLock.connect(userOne).refund())
+      .to.emit(principalLock, 'PrincipalTokensRefunded')
+      .withArgs(genericToken.address, userOne.address, BigNumber.from(10000).mul(BigNumber.from(10).pow(18)))
+
+    // When user User One refunds his Principal Tokens, the Principal Lock calls the Griefing Lock's setRefund method
+    // so that User One cannot refund his Griefing Tokens, but User Two can withdraw the Griefing Tokens (this is done with the use of boolean vars _accessible and _refunded)
+
+    await time.increase(100);
+
+    await expect(griefingLock.connect(userTwo).withdraw())
+      .to.emit(griefingLock, 'GriefingTokensWithdrawn')
+      .withArgs(genericToken.address, userTwo.address, BigNumber.from(1000).mul(BigNumber.from(10).pow(18)));
+
+    await expect(griefingLock.connect(userOne).refund())
+      .to.be.revertedWith("Refund: Already Refunded");
+
+  });
+
+  it('QuickSwap setRefund Method Illustration - Only Principal Lock can call this method', async () => {
+    const { userOne, userTwo, genericToken, griefingLock } = await loadFixture(deployFixture);
+    await time.increase(100);
+    await expect(
+      genericToken.connect(userOne).approve(griefingLock.address, BigNumber.from(10000).mul(BigNumber.from(10).pow(18)))
+    )
+      .to.emit(genericToken, 'Approval')
+      .withArgs(userOne.address, griefingLock.address, BigNumber.from(10000).mul(BigNumber.from(10).pow(18)));
+
+    await griefingLock.connect(userOne).deployPrincipal(BigNumber.from(10000).mul(BigNumber.from(10).pow(18)));
+
+    const pLockAddress = await griefingLock.connect(userTwo).getPrincipalLock();
+    principalLock = (await ethers.getContractAt('PrincipalLockToken', pLockAddress));
+
+    // No one can access the griefingLock's setRefund() method other than principalLock when userOne refunds
+
+    await expect(griefingLock.connect(userOne).setRefund())
+      .to.be.revertedWith("Principal Lock Refund Setting: Unauthorized Access")
+
+    await expect(griefingLock.connect(userTwo).setRefund())
+      .to.be.revertedWith("Principal Lock Refund Setting: Unauthorized Access")
+
+    await expect(griefingLock.connect(adminUser).setRefund())
+      .to.be.revertedWith("Principal Lock Refund Setting: Unauthorized Access")
+
+    await expect(principalLock.connect(userOne).refund())
+      .to.emit(principalLock, 'PrincipalTokensRefunded')
+      .withArgs(genericToken.address, userOne.address, BigNumber.from(10000).mul(BigNumber.from(10).pow(18)))
+
+    // When user User One refunds his Principal Tokens, the Principal Lock calls the Griefing Lock's setRefund method
+    // so that User One cannot refund his Griefing Tokens, but User Two can withdraw the Griefing Tokens (this is done with the use of boolean vars _accessible and _refunded)
+
+    await time.increase(100);
+
+    await expect(griefingLock.connect(userTwo).withdraw())
+      .to.emit(griefingLock, 'GriefingTokensWithdrawn')
+      .withArgs(genericToken.address, userTwo.address, BigNumber.from(1000).mul(BigNumber.from(10).pow(18)));
+
+    await expect(griefingLock.connect(userOne).refund())
+      .to.be.revertedWith("Refund: Already Refunded");
+  });
+
+
   it('QuickSwap Reverts - Unauthorized User Attempts to Withdraw/Refund', async () => {
     const { adminUser, griefingLock } = await loadFixture(deployFixture);
     await time.increase(100);

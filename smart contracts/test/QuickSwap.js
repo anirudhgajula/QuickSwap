@@ -1,5 +1,6 @@
 const { loadFixture, time } = require("@nomicfoundation/hardhat-network-helpers");
 const { ethers } = require("hardhat");
+const { BigNumber } = require("ethers");
 const { expect } = require("chai");
 
 describe('QuickSwap', function () {
@@ -91,6 +92,69 @@ describe('QuickSwap', function () {
         await expect(griefingLock.connect(userTwo).withdraw()).to.be.revertedWith(
         'Withdrawal: Principal Lock is deployed. Claim your funds'
         );
+    });
+
+    it('QuickSwap Reverts - User One refunds and User Two withdraws Griefing Amount', async () => {
+        const { userOne, userTwo, griefingLock } = await loadFixture(deployFixture);
+        await time.increase(100);
+    
+        await griefingLock.connect(userOne).deployPrincipal({value: BigNumber.from(1).mul(BigNumber.from(10).pow(18))});
+    
+        const pLockAddress = await griefingLock.connect(userTwo).getPrincipalLock();
+        principalLock = (await ethers.getContractAt('PrincipalLock', pLockAddress));
+    
+        await expect(principalLock.connect(userOne).refund())
+          .to.emit(principalLock, 'PrincipalRefunded')
+          .withArgs(userOne.address, BigNumber.from(1).mul(BigNumber.from(10).pow(18)))
+    
+        // When user User One refunds his Principal Tokens, the Principal Lock calls the Griefing Lock's setRefund method
+        // so that User One cannot refund his Griefing Tokens, but User Two can withdraw the Griefing Tokens (this is done with the use of boolean vars _accessible and _refunded)
+    
+        await time.increase(100);
+    
+        await expect(griefingLock.connect(userTwo).withdraw())
+          .to.emit(griefingLock, 'GriefingWithdrawn')
+          .withArgs(userTwo.address, 2000);
+    
+        await expect(griefingLock.connect(userOne).refund())
+          .to.be.revertedWith("Refund: Already Refunded");
+    });
+    
+    it('QuickSwap setRefund Method Illustration - Only Principal Lock can call this method', async () => {
+        const { userOne, userTwo, griefingLock } = await loadFixture(deployFixture);
+        await time.increase(100);
+    
+        await griefingLock.connect(userOne).deployPrincipal({value: BigNumber.from(1).mul(BigNumber.from(10).pow(18))});
+    
+        const pLockAddress = await griefingLock.connect(userTwo).getPrincipalLock();
+        principalLock = (await ethers.getContractAt('PrincipalLock', pLockAddress));
+    
+        // No one can access the griefingLock's setRefund() method other than principalLock when userOne refunds
+    
+        await expect(griefingLock.connect(userOne).setRefund())
+          .to.be.revertedWith("Principal Lock Refund Setting: Unauthorized Access")
+    
+        await expect(griefingLock.connect(userTwo).setRefund())
+          .to.be.revertedWith("Principal Lock Refund Setting: Unauthorized Access")
+    
+        await expect(griefingLock.connect(userThree).setRefund())
+          .to.be.revertedWith("Principal Lock Refund Setting: Unauthorized Access")
+    
+        await expect(principalLock.connect(userOne).refund())
+          .to.emit(principalLock, 'PrincipalRefunded')
+          .withArgs(userOne.address, BigNumber.from(1).mul(BigNumber.from(10).pow(18)))
+    
+        // When user User One refunds his Principal Tokens, the Principal Lock calls the Griefing Lock's setRefund method
+        // so that User One cannot refund his Griefing Tokens, but User Two can withdraw the Griefing Tokens (this is done with the use of boolean vars _accessible and _refunded)
+    
+        await time.increase(100);
+    
+        await expect(griefingLock.connect(userTwo).withdraw())
+          .to.emit(griefingLock, 'GriefingWithdrawn')
+          .withArgs(userTwo.address, 2000);
+    
+        await expect(griefingLock.connect(userOne).refund())
+          .to.be.revertedWith("Refund: Already Refunded");
     });
 
     it('QuickSwap Reverts - Unauthorized User Attempts to Withdraw/Refund', async () => {
