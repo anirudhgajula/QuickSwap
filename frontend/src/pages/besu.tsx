@@ -5,7 +5,7 @@ import { useState, useEffect, SetStateAction } from 'react';
 import TokenBalance from '../components/TokenBalance';
 import Image from 'next/image';
 import besu from '../../public/besu.png';
-import DepTok from '@/components/DepTok';
+import DeployToken from '@/components/DeployToken';
 import GriefingLockToken from '../../utils/GriefingLockToken.json';
 
 function Besu() {
@@ -41,7 +41,7 @@ function Besu() {
             {connected && (
                 <>
                     <TokenBalance addr={address}/>
-                    <DepTok></DepTok>
+                    <DeployToken></DeployToken>
                 </>
             )}
 
