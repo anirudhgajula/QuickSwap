@@ -1,7 +1,7 @@
 import { Chain } from 'wagmi'
 
 export const besu = {
-    id: 42,
+    id: 44527,
     network: "besu",
     name: "ANT Network",
     nativeCurrency: { name: "ANT Ether", symbol: "ETH", decimals: 18 },
