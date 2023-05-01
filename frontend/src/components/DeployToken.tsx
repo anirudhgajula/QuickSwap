@@ -8,7 +8,7 @@ import { WarningIcon } from "@chakra-ui/icons";
 import { Signer } from 'ethers'
 import { besu } from '@/besu'
 
-function DepTok() {
+function DeployToken() {
   const [param1, setParam1] = useState('')
   const [param2, setParam2] = useState('')
   const [param3, setParam3] = useState('')
@@ -75,4 +75,4 @@ function DepTok() {
   )
 }
 
-export default DepTok;
+export default DeployToken;
